@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>                 <string>Morse Eye</string>
+    <key>CFBundleDisplayName</key>          <string>Morse Eye</string>
+    <key>CFBundleIdentifier</key>           <string>app.morseeye.MorseEye</string>
+    <key>CFBundleExecutable</key>           <string>MorseEye</string>
+    <key>CFBundlePackageType</key>          <string>APPL</string>
+    <key>CFBundleShortVersionString</key>   <string>1.0</string>
+    <key>CFBundleVersion</key>              <string>1</string>
+    <key>CFBundleIconFile</key>             <string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key>       <string>14.0</string>
+    <!-- Menu bar only: no Dock icon, no app menu -->
+    <key>LSUIElement</key>                  <true/>
+    <key>NSHighResolutionCapable</key>      <true/>
+    <key>LSApplicationCategoryType</key>    <string>public.app-category.utilities</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Morse Eye takes a screenshot when you press your shortcut, so the AI can see what you're looking at.</string>
+</dict>
+</plist>

@@ -1,0 +1,3 @@
+anthropic
+pynput
+pyobjc-core; sys_platform == "darwin"   # only needed for the "backlight" output

@@ -1,0 +1,23 @@
+{
+  "name": "Simple signals",
+  "description": "Example custom code. Symbols are any characters you like, each mapped to how many time-units the LED stays ON. 's' = short blink, 'l' = long blink, 'h' = very long hold. Edit freely, then point config.json at this file.",
+  "symbols": { "s": 1, "l": 4, "h": 8 },
+  "symbol_gap": 1,
+  "letter_gap": 4,
+  "word_gap": 10,
+  "prefix": "",
+  "suffix": "",
+  "case_sensitive": false,
+  "words": {
+    "YES": "l",
+    "NO": "ss",
+    "MAYBE": "sls",
+    "ERROR": "h",
+    "DONE": "llll"
+  },
+  "table": {
+    "1": "s",     "2": "ss",    "3": "sss",   "4": "ssss",  "5": "l",
+    "6": "ls",    "7": "lss",   "8": "lsss",  "9": "lssss", "0": "ll"
+  },
+  "ai_instructions": "Answer with exactly one of: YES, NO, MAYBE, ERROR, DONE, or a number."
+}

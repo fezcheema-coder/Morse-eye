@@ -1,0 +1,19 @@
+name: Build Mac app
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: MacApp/build-app.sh --no-install
+      - name: Zip
+        run: cd MacApp/build && ditto -c -k --keepParent "Morse Eye.app" MorseEye.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Morse-Eye-app
+          path: MacApp/build/MorseEye.zip

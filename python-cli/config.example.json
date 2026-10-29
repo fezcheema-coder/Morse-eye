@@ -1,0 +1,32 @@
+{
+  "hotkeys": {
+    "<cmd>+<alt>+<shift>+m": "Briefly, what is on this screen?",
+    "<cmd>+<alt>+<shift>+e": "Is there an error or warning visible? Say what it is in a few words.",
+    "<cmd>+<alt>+<shift>+t": "What time or date is shown on screen?"
+  },
+  "abort_hotkey": "<cmd>+<alt>+<shift>+x",
+  "replay_hotkey": "<cmd>+<alt>+<shift>+r",
+
+  "ai": {
+    "provider": "claude",
+    "model": "",
+    "base_url": "",
+    "effort": "low",
+    "max_chars": 40
+  },
+
+  "code": {
+    "file": "codes/morse.json",
+    "wpm": 12
+  },
+
+  "output": {
+    "device": "capslock",
+    "backlight_level": 1.0,
+    "invert": false
+  },
+
+  "screenshot": { "display": 1, "max_edge": 1568 },
+  "notify": false,
+  "print_reply": true
+}

@@ -1,0 +1,10 @@
+.build/
+build/
+.venv/
+.env
+.env.tmp
+.api_key
+config.json
+__pycache__/
+.pytest_cache/
+.DS_Store
