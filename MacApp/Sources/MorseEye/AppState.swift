@@ -3,6 +3,18 @@ import Carbon.HIToolbox
 import ServiceManagement
 import SwiftUI
 
+enum IconStyle: String, Codable, CaseIterable, Identifiable {
+    case symbol, text, image
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .symbol: "Symbol"
+        case .text: "Text / emoji"
+        case .image: "Image"
+        }
+    }
+}
+
 struct QuickPrompt: Codable, Identifiable, Hashable {
     var id = UUID()
     var title: String
@@ -22,7 +34,16 @@ struct AppSettings: Codable, Equatable {
     var backlightLevel = 1.0
     var invert = false
     var wpm = 12.0
-    var codeName = "International Morse"
+    var codeName = AppSettings.letterCountName
+    /// The Letter Count code was added in 1.1; switch to it once for existing users.
+    var letterCountSelected = false
+
+    var iconStyle: IconStyle = .symbol
+    var iconSymbol = "dot.radiowaves.left.and.right"
+    var iconText = "·–·"
+    var iconImagePath = ""
+    var iconTemplate = true
+    var animateIcon = true
 
     var prompts: [QuickPrompt] = [
         QuickPrompt(title: "What's on screen?", prompt: "Briefly, what is on this screen?",
@@ -37,6 +58,7 @@ struct AppSettings: Codable, Equatable {
 
     var onboarded = false
 
+    static let letterCountName = "Letter Count (A=1, B=2…)"
     private static let key = "settings.v1"
 
     /// Saved values are merged over defaults, so new settings added in later versions
@@ -92,6 +114,7 @@ final class AppState: ObservableObject {
     @Published var codeProblems: [String] = []
     /// Bumped when keys change so views re-read the Keychain.
     @Published var keysVersion = 0
+    @Published var customIcon: NSImage?
 
     let ollama: OllamaManager
     private var work: Task<Void, Never>?
@@ -100,7 +123,13 @@ final class AppState: ObservableObject {
     init() {
         settings = AppSettings.load()
         ollama = OllamaManager()
+        if !settings.letterCountSelected {
+            settings.letterCountSelected = true
+            settings.codeName = AppSettings.letterCountName
+            settings.save()
+        }
         reloadCodes()
+        loadCustomIcon()
         registerHotKeys()
     }
 
@@ -118,12 +147,53 @@ final class AppState: ObservableObject {
             ?? (try! JSONDecoder().decode(SignalCode.self, from: Data(BuiltInCodes.morse.utf8)))
     }
 
-    var menuIcon: String {
+    /// A temporary icon that replaces the user's icon while something is happening, or nil.
+    var activityIcon: String? {
+        if phase == .blinking && settings.output == .menuBar {
+            return iconLit ? "circle.fill" : "circle"  // the icon *is* the light
+        }
+        guard settings.animateIcon else { return nil }
         switch phase {
-        case .idle: "dot.radiowaves.left.and.right"
-        case .capturing: "camera.viewfinder"
-        case .thinking: "ellipsis.circle"
-        case .blinking: iconLit ? "circle.fill" : "circle"
+        case .idle: return nil
+        case .capturing: return "camera.viewfinder"
+        case .thinking: return "ellipsis.circle"
+        case .blinking: return "light.max"
+        }
+    }
+
+    // MARK: Menu bar icon
+
+    static var iconFolder: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Morse Eye", isDirectory: true)
+    }
+
+    func loadCustomIcon() {
+        guard !settings.iconImagePath.isEmpty, let image = NSImage(contentsOfFile: settings.iconImagePath) else {
+            customIcon = nil
+            return
+        }
+        // Menu bar icons are 18pt tall; keep the image's proportions.
+        let ratio = image.size.height > 0 ? image.size.width / image.size.height : 1
+        image.size = NSSize(width: 18 * min(max(ratio, 0.5), 2), height: 18)
+        image.isTemplate = settings.iconTemplate
+        customIcon = image
+    }
+
+    /// Copies the chosen picture into Application Support so it survives the original being moved.
+    func setCustomIcon(from url: URL) {
+        let fm = FileManager.default
+        try? fm.createDirectory(at: Self.iconFolder, withIntermediateDirectories: true)
+        let dest = Self.iconFolder.appendingPathComponent("MenuIcon." + (url.pathExtension.isEmpty ? "png" : url.pathExtension))
+        try? fm.removeItem(at: dest)
+        do {
+            try fm.copyItem(at: url, to: dest)
+            settings.iconImagePath = dest.path
+            settings.iconStyle = .image
+            loadCustomIcon()
+            if customIcon == nil { lastError = "That file couldn't be opened as an image." }
+        } catch {
+            lastError = "Couldn't use that image: \(error.localizedDescription)"
         }
     }
 

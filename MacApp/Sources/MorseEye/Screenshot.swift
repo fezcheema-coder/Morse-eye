@@ -52,15 +52,16 @@ enum Screenshot {
     }
 
     /// A small blank image used by "Test connection".
+    /// Drawn with Core Graphics in RGBA: a 24-bit RGB bitmap can't be drawn into
+    /// on macOS, which is what made earlier versions crash here.
     static func blankJPEG() -> Data {
-        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 64, pixelsHigh: 64,
-                                   bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
-                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-        NSColor.white.setFill()
-        NSRect(x: 0, y: 0, width: 64, height: 64).fill()
-        NSGraphicsContext.restoreGraphicsState()
-        return rep.representation(using: .jpeg, properties: [:]) ?? Data()
+        let size = 64
+        guard let ctx = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return Data() }
+        ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
+        guard let image = ctx.makeImage() else { return Data() }
+        return NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [:]) ?? Data()
     }
 }

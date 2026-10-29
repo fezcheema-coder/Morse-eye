@@ -200,7 +200,9 @@ enum CodeLibrary {
 }
 
 enum BuiltInCodes {
-    static let files: [(String, String)] = [("Morse.json", morse), ("Simple Signals.json", simple)]
+    static let files: [(String, String)] = [
+        ("Morse.json", morse), ("Letter Count.json", letterCount), ("Simple Signals.json", simple),
+    ]
 
     static let morse = """
     {
@@ -226,6 +228,30 @@ enum BuiltInCodes {
         "/": "-..-.",  "(": "-.--.",  ")": "-.--.-", "&": ".-...",  ":": "---...",
         ";": "-.-.-.", "=": "-...-",  "+": ".-.-.",  "-": "-....-", "@": ".--.-."
       }
+    }
+    """
+
+    static let letterCount = """
+    {
+      "name": "Letter Count (A=1, B=2…)",
+      "description": "Each letter is that many short blinks: A = 1, B = 2 … Z = 26. Digits are long blinks: 1 = one long … 9 = nine long, 0 = one extra-long hold. Slow speeds (6–10 WPM) make counting easier.",
+      "symbols": { ".": 1, "-": 3, "_": 7 },
+      "symbol_gap": 2,
+      "letter_gap": 7,
+      "word_gap": 14,
+      "prefix": "",
+      "suffix": "",
+      "table": {
+        "A": ".", "B": "..", "C": "...", "D": "....",
+        "E": ".....", "F": "......", "G": ".......", "H": "........",
+        "I": ".........", "J": "..........", "K": "...........", "L": "............",
+        "M": ".............", "N": "..............", "O": "...............", "P": "................",
+        "Q": ".................", "R": "..................", "S": "...................", "T": "....................",
+        "U": ".....................", "V": "......................", "W": ".......................", "X": "........................",
+        "Y": ".........................", "Z": "..........................",
+        "1": "-", "2": "--", "3": "---", "4": "----", "5": "-----", "6": "------", "7": "-------", "8": "--------", "9": "---------", "0": "_"
+      },
+      "ai_instructions": "Keep the answer to one or two short words. Letters late in the alphabet take many blinks, so prefer short, simple words."
     }
     """
 

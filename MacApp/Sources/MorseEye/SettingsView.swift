@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     var body: some View {
@@ -10,7 +11,7 @@ struct SettingsView: View {
             ShortcutsTab().tabItem { Label("Shortcuts", systemImage: "command") }
             SignalsTab().tabItem { Label("Signals", systemImage: "light.max") }
         }
-        .frame(width: 640, height: 560)
+        .frame(width: 660, height: 620)
     }
 }
 
@@ -54,6 +55,8 @@ struct GeneralTab: View {
                 }
             }
 
+            MenuIconSection()
+
             Section("Behaviour") {
                 Toggle("Open Morse Eye when I log in", isOn: $state.launchAtLogin)
                 LabeledContent("Answer length") {
@@ -75,6 +78,90 @@ struct GeneralTab: View {
         .onAppear { screenAccess = Screenshot.hasPermission }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             screenAccess = Screenshot.hasPermission
+        }
+    }
+}
+
+struct MenuIconSection: View {
+    @EnvironmentObject var state: AppState
+
+    static let symbols = [
+        "dot.radiowaves.left.and.right", "antenna.radiowaves.left.and.right", "eye", "eye.fill",
+        "light.max", "lightbulb", "lightbulb.fill", "bolt.fill",
+        "sparkles", "wand.and.stars", "brain", "brain.head.profile",
+        "viewfinder", "camera.viewfinder", "waveform", "circle.dotted",
+        "keyboard", "capslock.fill", "ellipsis.circle", "star.fill",
+        "heart.fill", "moon.fill", "sun.max.fill", "cat.fill",
+    ]
+
+    var body: some View {
+        Section {
+            HStack {
+                Picker("Style", selection: $state.settings.iconStyle) {
+                    ForEach(IconStyle.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+                Spacer()
+                Text("Preview").foregroundStyle(.secondary)
+                MenuIconView(style: state.settings.iconStyle, symbol: state.settings.iconSymbol,
+                             text: state.settings.iconText, image: state.customIcon)
+                    .frame(minWidth: 28, minHeight: 22)
+                    .padding(.horizontal, 6)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))
+            }
+
+            switch state.settings.iconStyle {
+            case .symbol:
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 6), count: 12), spacing: 6) {
+                    ForEach(Self.symbols, id: \.self) { name in
+                        Button {
+                            state.settings.iconSymbol = name
+                        } label: {
+                            Image(systemName: name)
+                                .frame(width: 30, height: 26)
+                                .background(state.settings.iconSymbol == name ? Color.accentColor.opacity(0.25) : .clear,
+                                            in: RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                        .help(name)
+                    }
+                }
+                TextField("Or type any SF Symbol name", text: $state.settings.iconSymbol)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+            case .text:
+                TextField("Icon text", text: Binding(
+                    get: { state.settings.iconText },
+                    set: { state.settings.iconText = String($0.prefix(6)) }))
+                    .textFieldStyle(.roundedBorder)
+                Text("Up to 6 characters. Emoji work too, e.g. 👁 or 🔦.")
+                    .font(.caption).foregroundStyle(.secondary)
+            case .image:
+                HStack {
+                    Button("Choose image…") { chooseImage() }
+                    Toggle("Match menu bar colour", isOn: Binding(
+                        get: { state.settings.iconTemplate },
+                        set: { state.settings.iconTemplate = $0; state.loadCustomIcon() }))
+                }
+                Text("A simple black-and-transparent PNG looks best. With “Match menu bar colour” on, it turns white in dark mode.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Toggle("Show activity in the icon (camera while capturing, dots while thinking)",
+                   isOn: $state.settings.animateIcon)
+        } header: {
+            Text("Menu bar icon")
+        }
+    }
+
+    private func chooseImage() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a picture for the menu bar icon"
+        if panel.runModal() == .OK, let url = panel.url {
+            state.setCustomIcon(from: url)
         }
     }
 }
@@ -533,6 +620,9 @@ struct SignalsTab: View {
                         .help("Reload codes after editing")
                         .buttonStyle(.borderless)
                 }
+                DisclosureGroup("Chart") {
+                    CodeChart(code: state.code)
+                }
                 ForEach(state.codeProblems, id: \.self) { problem in
                     Label(problem, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption).foregroundStyle(.orange)
@@ -560,5 +650,36 @@ struct SignalsTab: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Every character (and whole word) in a code with its blink pattern.
+struct CodeChart: View {
+    let code: SignalCode
+
+    private var rows: [(String, String)] {
+        let chars = code.table.sorted { a, b in
+            // letters, then digits, then punctuation
+            func rank(_ s: String) -> Int { s.first?.isLetter == true ? 0 : s.first?.isNumber == true ? 1 : 2 }
+            return (rank(a.key), a.key) < (rank(b.key), b.key)
+        }
+        return code.words.sorted { $0.key < $1.key } + chars.map { ($0.key, $0.value) }
+    }
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), alignment: .leading)], alignment: .leading, spacing: 4) {
+            ForEach(rows, id: \.0) { key, pattern in
+                HStack(spacing: 8) {
+                    Text(key).font(.system(.body, design: .rounded).weight(.semibold)).frame(minWidth: 22, alignment: .leading)
+                    Text(pattern)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .textSelection(.enabled)
     }
 }

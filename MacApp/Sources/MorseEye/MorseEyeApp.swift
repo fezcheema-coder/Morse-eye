@@ -29,7 +29,7 @@ struct MenuBarLabel: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Image(systemName: state.menuIcon)
+        icon
             .task {
                 guard !state.settings.onboarded else { return }
                 state.settings.onboarded = true
@@ -37,6 +37,39 @@ struct MenuBarLabel: View {
                 openWindow(id: "settings")
                 NSApp.activate(ignoringOtherApps: true)
             }
+    }
+
+    @ViewBuilder private var icon: some View {
+        if let activity = state.activityIcon {
+            Image(systemName: activity)
+        } else {
+            MenuIconView(style: state.settings.iconStyle, symbol: state.settings.iconSymbol,
+                         text: state.settings.iconText, image: state.customIcon)
+        }
+    }
+}
+
+/// The user's chosen menu bar icon (also used as the preview in Settings).
+struct MenuIconView: View {
+    let style: IconStyle
+    let symbol: String
+    let text: String
+    let image: NSImage?
+
+    var body: some View {
+        switch style {
+        case .symbol:
+            Image(systemName: NSImage(systemSymbolName: symbol, accessibilityDescription: nil) == nil
+                  ? "dot.radiowaves.left.and.right" : symbol)
+        case .text:
+            Text(text.isEmpty ? "·–·" : text)
+        case .image:
+            if let image {
+                Image(nsImage: image)
+            } else {
+                Image(systemName: "photo")
+            }
+        }
     }
 }
 

@@ -43,6 +43,15 @@ enum SelfTest {
             check("timeline \(code.name)", !code.timeline("YES 123").isEmpty, code.pretty("YES 123"))
         }
 
+        if let count = state.codes.first(where: { $0.name == AppSettings.letterCountName }) {
+            let steps = count.timeline("AB")
+            // A = 1 on, letter gap, B = 2 ons with a gap between
+            check("letter count A=1 B=2", steps.filter(\.on).count == 3 && steps.first?.on == true, count.pretty("AB"))
+            check("letter count selected by default", state.settings.codeName == AppSettings.letterCountName)
+        } else {
+            check("letter count code installed", false)
+        }
+
         print("making blank image…")
         let jpeg = Screenshot.blankJPEG()
         check("blank image", jpeg.count > 100, "\(jpeg.count) bytes")
