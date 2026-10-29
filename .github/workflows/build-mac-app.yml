@@ -1,11 +1,13 @@
 name: Build Mac app
 
-# Every push builds the app. Pushing a tag like v1.0.0 also publishes a
-# GitHub Release with the DMG attached.
+# Every push builds the app. Publishing a GitHub Release (or pushing a tag
+# like v1.0.0) also attaches the DMG to that release.
 on:
   push:
     branches: [main]
     tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -53,7 +55,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp MacApp/build/MorseEye.dmg "MorseEye-${GITHUB_REF_NAME}.dmg"
-          gh release create "$GITHUB_REF_NAME" "MorseEye-${GITHUB_REF_NAME}.dmg" \
-            --title "Morse Eye ${GITHUB_REF_NAME}" \
-            --notes-file MacApp/RELEASE_NOTES.md
+          TAG="$GITHUB_REF_NAME"
+          DMG="MorseEye-${TAG}.dmg"
+          cp MacApp/build/MorseEye.dmg "$DMG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$DMG" --clobber
+            gh release edit "$TAG" --notes-file MacApp/RELEASE_NOTES.md
+          else
+            gh release create "$TAG" "$DMG" --title "Morse Eye ${TAG}" --notes-file MacApp/RELEASE_NOTES.md
+          fi
