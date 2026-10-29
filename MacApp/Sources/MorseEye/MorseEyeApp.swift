@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 
-@main
 struct MorseEyeApp: App {
     @StateObject private var state = AppState.shared
 

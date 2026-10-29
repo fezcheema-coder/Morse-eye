@@ -32,12 +32,27 @@ jobs:
           UNIVERSAL=1 MacApp/build-app.sh --no-install 2>&1 | tee build.log
           lipo -info "MacApp/build/Morse Eye.app/Contents/MacOS/MorseEye"
 
-      - name: Report compiler errors
+      - name: Self-test
+        run: |
+          python3 MacApp/scripts/mock_ai_server.py &
+          sleep 2
+          set -o pipefail
+          timeout 120 "MacApp/build/Morse Eye.app/Contents/MacOS/MorseEye" --self-test 2>&1 | tee selftest.log
+
+      - name: Report problems
         if: failure()
         run: |
-          # Surface errors as an annotation so they're readable without downloading logs
-          { grep -E "error:" build.log | sed 's#.*/Sources/##' | sort -u | head -80
-            echo "---- last lines ----"; tail -25 build.log; } > summary.txt || true
+          # Surface errors as annotations so they're readable without downloading logs
+          {
+            if [ -f build.log ]; then
+              grep -E "error:" build.log | sed 's#.*/Sources/##' | sort -u | head -80
+              echo "---- build: last lines ----"; tail -25 build.log
+            fi
+            if [ -f selftest.log ]; then
+              echo "---- self-test ----"; tail -60 selftest.log
+              echo "---- crash report ----"; python3 MacApp/scripts/crash_summary.py
+            fi
+          } > summary.txt 2>&1 || true
           msg=$(sed -e 's/%/%25/g' summary.txt | awk '{printf "%s%%0A", $0}')
           echo "::error title=Build output::$msg"
 

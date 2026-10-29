@@ -55,7 +55,11 @@ struct AppSettings: Codable, Equatable {
         return settings
     }
 
+    /// Turned off by the self-test so it never touches the user's real settings.
+    static var persist = true
+
     func save() {
+        guard Self.persist else { return }
         if let data = try? JSONEncoder().encode(self) {
             UserDefaults.standard.set(data, forKey: Self.key)
         }
