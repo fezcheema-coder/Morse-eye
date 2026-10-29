@@ -8,9 +8,20 @@ jobs:
   build:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build
-        run: MacApp/build-app.sh --no-install
+        run: |
+          set -o pipefail
+          swift --version
+          MacApp/build-app.sh --no-install 2>&1 | tee build.log
+      - name: Report compiler errors
+        if: failure()
+        run: |
+          # Surface errors as an annotation so they're readable without downloading logs
+          { grep -E "error:|warning: (variable|immutable)" build.log | sed 's#.*/Sources/##' | sort -u | head -80
+            echo "---- last lines ----"; tail -25 build.log; } > summary.txt || true
+          msg=$(sed -e 's/%/%25/g' summary.txt | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Build output::$msg"
       - name: Zip
         run: cd MacApp/build && ditto -c -k --keepParent "Morse Eye.app" MorseEye.zip
       - uses: actions/upload-artifact@v4
