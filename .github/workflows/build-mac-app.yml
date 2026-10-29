@@ -1,31 +1,59 @@
 name: Build Mac app
 
+# Every push builds the app. Pushing a tag like v1.0.0 also publishes a
+# GitHub Release with the DMG attached.
 on:
   push:
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
+
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" MacApp/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" MacApp/Info.plist
+
       - name: Build
         run: |
           set -o pipefail
           swift --version
           UNIVERSAL=1 MacApp/build-app.sh --no-install 2>&1 | tee build.log
           lipo -info "MacApp/build/Morse Eye.app/Contents/MacOS/MorseEye"
+
       - name: Report compiler errors
         if: failure()
         run: |
           # Surface errors as an annotation so they're readable without downloading logs
-          { grep -E "error:|warning: (variable|immutable)" build.log | sed 's#.*/Sources/##' | sort -u | head -80
+          { grep -E "error:" build.log | sed 's#.*/Sources/##' | sort -u | head -80
             echo "---- last lines ----"; tail -25 build.log; } > summary.txt || true
           msg=$(sed -e 's/%/%25/g' summary.txt | awk '{printf "%s%%0A", $0}')
           echo "::error title=Build output::$msg"
-      - name: Zip
-        run: cd MacApp/build && ditto -c -k --keepParent "Morse Eye.app" MorseEye.zip
+
+      - name: Make DMG
+        run: MacApp/make-dmg.sh
+
       - uses: actions/upload-artifact@v4
         with:
-          name: Morse-Eye-app
-          path: MacApp/build/MorseEye.zip
+          name: MorseEye-dmg
+          path: MacApp/build/MorseEye.dmg
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp MacApp/build/MorseEye.dmg "MorseEye-${GITHUB_REF_NAME}.dmg"
+          gh release create "$GITHUB_REF_NAME" "MorseEye-${GITHUB_REF_NAME}.dmg" \
+            --title "Morse Eye ${GITHUB_REF_NAME}" \
+            --notes-file MacApp/RELEASE_NOTES.md

@@ -14,6 +14,19 @@ Needs macOS 14 (Sonoma) or newer.
 
 ## Install
 
+**Easiest:** download the latest **MorseEye-….dmg** from this repo's
+[Releases](../../releases) page, open it, and drag Morse Eye into Applications. Then open
+Terminal and paste this once (the app isn't registered with Apple, so macOS otherwise says
+it's damaged):
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Morse Eye.app"
+```
+
+Open Morse Eye from Applications and continue with the first-launch steps below.
+
+**Or build it yourself:**
+
 1. **Right-click `Install Morse Eye.command` → Open → Open.**
    macOS asks for the right-click the first time because the file was downloaded.
 2. If a window asks to install **developer tools**, click **Install**. It's free from Apple
@@ -89,5 +102,12 @@ MacApp/
 python-cli/                the earlier command-line version
 ```
 
-Pushing to GitHub runs `.github/workflows/build-mac-app.yml`, which builds the app on a
-Mac runner and attaches it as a downloadable artifact.
+Every push to `main` builds the app and a DMG on a GitHub Mac runner
+(`.github/workflows/build-mac-app.yml`). To publish a release, push a version tag:
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+The workflow stamps that version into the app and attaches `MorseEye-v1.0.1.dmg` to a new
+GitHub Release. Run `MacApp/make-dmg.sh` after `build-app.sh --no-install` to make a DMG locally.
