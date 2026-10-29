@@ -133,7 +133,8 @@ final class OllamaManager: ObservableObject {
         guard !name.isEmpty, downloads[name] == nil else { return }
         downloads[name] = Download(progress: nil, status: "Starting…")
         let task = Task { [weak self] in
-            await self?.runPull(name)
+            guard let self else { return }
+            await self.runPull(name)
         }
         downloads[name]?.task = task
     }
