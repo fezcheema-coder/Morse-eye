@@ -37,7 +37,7 @@ jobs:
           python3 MacApp/scripts/mock_ai_server.py &
           sleep 2
           set -o pipefail
-          timeout 120 "MacApp/build/Morse Eye.app/Contents/MacOS/MorseEye" --self-test 2>&1 | tee selftest.log
+          perl -e 'alarm 120; exec @ARGV' "MacApp/build/Morse Eye.app/Contents/MacOS/MorseEye" --self-test 2>&1 | tee selftest.log
 
       - name: Report problems
         if: failure()
