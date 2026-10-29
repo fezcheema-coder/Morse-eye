@@ -13,7 +13,8 @@ jobs:
         run: |
           set -o pipefail
           swift --version
-          MacApp/build-app.sh --no-install 2>&1 | tee build.log
+          UNIVERSAL=1 MacApp/build-app.sh --no-install 2>&1 | tee build.log
+          lipo -info "MacApp/build/Morse Eye.app/Contents/MacOS/MorseEye"
       - name: Report compiler errors
         if: failure()
         run: |

@@ -13,8 +13,11 @@ if ! xcrun --find swift >/dev/null 2>&1; then
 fi
 
 echo "==> Compiling (the first build takes a minute or two)…"
-swift build -c release
-BIN_DIR="$(swift build -c release --show-bin-path)"
+# UNIVERSAL=1 builds for both Apple Silicon and Intel (needs full Xcode, used by CI)
+ARCH_FLAGS=()
+[ "${UNIVERSAL:-}" = "1" ] && ARCH_FLAGS=(--arch arm64 --arch x86_64)
+swift build -c release "${ARCH_FLAGS[@]}"
+BIN_DIR="$(swift build -c release "${ARCH_FLAGS[@]}" --show-bin-path)"
 
 APP="build/Morse Eye.app"
 echo "==> Packaging $APP"
