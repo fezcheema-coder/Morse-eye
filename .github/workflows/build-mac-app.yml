@@ -1,11 +1,10 @@
 name: Build Mac app
 
-# Every push builds the app. Publishing a GitHub Release (or pushing a tag
-# like v1.0.0) also attaches the DMG to that release.
+# Every push to main builds the app. Publishing a GitHub Release (e.g. tag
+# v1.0.0) builds it with that version number and attaches the DMG to the release.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   release:
     types: [published]
   workflow_dispatch:

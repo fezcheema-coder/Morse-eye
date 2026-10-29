@@ -103,11 +103,7 @@ python-cli/                the earlier command-line version
 ```
 
 Every push to `main` builds the app and a DMG on a GitHub Mac runner
-(`.github/workflows/build-mac-app.yml`). To publish a release, push a version tag:
-
-```bash
-git tag v1.0.1 && git push origin v1.0.1
-```
-
-The workflow stamps that version into the app and attaches `MorseEye-v1.0.1.dmg` to a new
-GitHub Release. Run `MacApp/make-dmg.sh` after `build-app.sh --no-install` to make a DMG locally.
+(`.github/workflows/build-mac-app.yml`). To publish a release, open **Releases → Draft a
+new release** on GitHub, create a tag such as `v1.0.1`, and click **Publish release**.
+The workflow stamps that version into the app and attaches `MorseEye-v1.0.1.dmg` to the
+release a few minutes later. Run `MacApp/make-dmg.sh` after `build-app.sh --no-install` to make a DMG locally.
